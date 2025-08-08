@@ -1,0 +1,1917 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Learning - AI Coach Demo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+            background: #f3f2ef;
+            overflow: hidden;
+            height: 100vh;
+        }
+        
+        .app-container {
+            display: flex;
+            height: 100vh;
+        }
+        
+        /* Left Sidebar */
+        .sidebar {
+            width: 60px;
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px 0;
+        }
+        
+        .sidebar-icon {
+            width: 40px;
+            height: 40px;
+            margin: 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+        
+        .sidebar-icon:hover {
+            background: #f3f2ef;
+        }
+        
+        .sidebar-icon svg {
+            width: 24px;
+            height: 24px;
+            fill: #666;
+        }
+        
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            display: flex;
+            background: #fff;
+        }
+        
+        /* Left Panel - Chat */
+        .chat-panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #e0e0e0;
+        }
+        
+        .chat-header {
+            height: 60px;
+            background: #fff;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 10px;
+        }
+        
+        .linkedin-logo {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 20px;
+            color: #0a66c2;
+            font-weight: 600;
+        }
+        
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+        }
+        
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .message.user {
+            text-align: right;
+        }
+        
+        .message-content {
+            display: inline-block;
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            line-height: 1.5;
+        }
+        
+        .message.user .message-content {
+            background: #0a66c2;
+            color: white;
+        }
+        
+        .message.ai .message-content {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            color: #333;
+        }
+        
+        .ai-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+            color: #0a66c2;
+            font-weight: 600;
+        }
+        
+        .typing-indicator {
+            display: none;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+        
+        .typing-indicator.active {
+            display: inline-flex;
+        }
+        
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background: #666;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        
+        .typing-dot:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+        
+        @keyframes typing {
+            0%, 60%, 100% { opacity: 0.3; }
+            30% { opacity: 1; }
+        }
+        
+        .chat-input-container {
+            padding: 20px;
+            background: #fff;
+            border-top: 1px solid #e0e0e0;
+        }
+        
+        .chat-input-wrapper {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .chat-input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 1px solid #e0e0e0;
+            border-radius: 24px;
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        
+        .chat-input:focus {
+            border-color: #0a66c2;
+        }
+        
+        .send-button {
+            width: 40px;
+            height: 40px;
+            border: none;
+            background: #0a66c2;
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.2s;
+        }
+        
+        .send-button:hover {
+            background: #084c94;
+        }
+        
+        .send-button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        /* Right Panel - Exercise */
+        .exercise-panel {
+            width: 400px;
+            background: #2d3748;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 0;
+            position: relative;
+        }
+        
+        .exercise-panel.search-mode {
+            background: white;
+            color: #1a202c;
+        }
+        
+        .exercise-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        
+        .exercise-panel.search-mode .exercise-header {
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .exercise-title {
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .exercise-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+        }
+        
+        .exercise-panel.search-mode .exercise-content {
+            padding: 0;
+        }
+        
+        .exercise-prompt {
+            background: #1a202c;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        
+        .exercise-input {
+            flex: 1;
+            background: #1a202c;
+            border: 1px solid #4a5568;
+            border-radius: 8px;
+            padding: 16px;
+            color: white;
+            font-size: 14px;
+            resize: none;
+            outline: none;
+            margin-bottom: 20px;
+        }
+        
+        .exercise-input:focus {
+            border-color: #3182ce;
+        }
+        
+        .submit-button {
+            background: #3182ce;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 24px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .submit-button:hover {
+            background: #2c5aa0;
+        }
+        
+        /* Course Thumbnails */
+        .course-references {
+            display: flex;
+            gap: 12px;
+            margin-top: 16px;
+            flex-wrap: wrap;
+        }
+        
+        .course-ref {
+            display: flex;
+            background: #f8f9fa;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            width: fit-content;
+            max-width: 280px;
+        }
+        
+        .course-ref:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .course-ref img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+        }
+        
+        .course-ref-title {
+            padding: 12px 16px;
+            font-size: 13px;
+            font-weight: 600;
+            color: #333;
+            display: flex;
+            align-items: center;
+        }
+        
+        /* Smart Replies */
+        .smart-replies {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .smart-reply {
+            padding: 8px 16px;
+            background: #e8f4fd;
+            border: 1px solid #0a66c2;
+            border-radius: 20px;
+            color: #0a66c2;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .smart-reply:hover {
+            background: #0a66c2;
+            color: white;
+        }
+        
+        /* Multiple Choice */
+        .mc-options {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .mc-option {
+            padding: 12px 16px;
+            background: #1a202c;
+            border: 2px solid #4a5568;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .mc-option:hover {
+            border-color: #3182ce;
+        }
+        
+        .mc-option.selected {
+            border-color: #3182ce;
+            background: #2d3e50;
+        }
+        
+        .mc-option.correct {
+            border-color: #48bb78;
+            background: #1a202c;
+        }
+        
+        .mc-option.incorrect {
+            border-color: #f56565;
+            background: #1a202c;
+        }
+        
+        /* Feedback */
+        .feedback {
+            background: #1a202c;
+            padding: 16px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+        
+        .feedback.show {
+            display: block;
+        }
+        
+        .feedback.success {
+            border-left: 4px solid #48bb78;
+        }
+        
+        .feedback.error {
+            border-left: 4px solid #f56565;
+        }
+        
+        /* Welcome State */
+        .welcome-prompt {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .welcome-prompt h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .example-queries {
+            margin-top: 30px;
+        }
+        
+        .example-query {
+            background: #f3f2ef;
+            padding: 12px 20px;
+            border-radius: 20px;
+            margin: 10px auto;
+            max-width: 400px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .example-query:hover {
+            background: #e8f4fd;
+            color: #0a66c2;
+        }
+        
+        /* Video Modal */
+        .video-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .video-modal.active {
+            display: flex;
+        }
+        
+        .video-container {
+            width: 80%;
+            max-width: 900px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        
+        .video-player {
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            background: #000;
+        }
+        
+        .video-thumbnail {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .play-button {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80px;
+            height: 80px;
+            background: rgba(0,0,0,0.7);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .play-button:hover {
+            background: rgba(0,0,0,0.9);
+        }
+        
+        .play-button i {
+            color: white;
+            font-size: 30px;
+            margin-left: 5px;
+        }
+        
+        .video-info {
+            background: white;
+            padding: 20px;
+        }
+        
+        .video-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .video-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.1);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .video-close:hover {
+            background: rgba(255,255,255,0.2);
+        }
+        
+        /* Search Results */
+        .search-results-container {
+            background: white;
+            height: 100%;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        
+        .search-results-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .search-results-count {
+            color: #4a5568;
+            font-size: 14px;
+        }
+        
+        .search-results-sort {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #4a5568;
+        }
+        
+        .search-result-card {
+            display: flex;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        
+        .search-result-card:last-child {
+            border-bottom: none;
+        }
+        
+        .search-result-thumb {
+            width: 120px;
+            height: 68px;
+            border-radius: 6px;
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        
+        .search-result-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .search-result-type {
+            font-size: 12px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .search-result-type.popular {
+            color: #dc2626;
+            font-weight: 600;
+        }
+        
+        .search-result-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 2px;
+            line-height: 1.2;
+        }
+        
+        .search-result-meta {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            color: #4a5568;
+            margin-bottom: 4px;
+        }
+        
+        .search-result-provider {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            color: #6b7280;
+            margin-bottom: 4px;
+        }
+        
+        .linkedin-icon {
+            width: 14px;
+            height: 14px;
+            background: #0a66c2;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 9px;
+            font-weight: bold;
+        }
+        
+        .search-result-stats {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: #4a5568;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .search-result-rating {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .stars {
+            color: #f59e0b;
+        }
+        
+        .search-result-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .search-result-cta {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            color: #0a66c2;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .save-button {
+            padding: 4px 12px;
+            border: 1px solid #0a66c2;
+            border-radius: 16px;
+            background: white;
+            color: #0a66c2;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .save-button:hover {
+            background: #e8f4fd;
+        }
+        
+        .more-button {
+            background: none;
+            border: none;
+            color: #6b7280;
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        /* Markdown Formatting */
+        .message-content ul {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+        
+        .message-content li {
+            margin: 5px 0;
+        }
+        
+        .message-content strong {
+            font-weight: 600;
+            color: #0a66c2;
+        }
+        
+        .message-content em {
+            font-style: italic;
+            color: #666;
+        }
+        
+        /* Main Question Header */
+        .main-question {
+            font-size: 24px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        
+        /* Role Play Styles */
+        .roleplay-intro {
+            background: white;
+            border-radius: 12px;
+            padding: 20px 24px;
+            color: #1a202c;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            font-size: 13px;
+            line-height: 1.4;
+        }
+        
+        .roleplay-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: #1a202c;
+        }
+        
+        .roleplay-user-info {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+            color: #6b7280;
+            font-size: 13px;
+        }
+        
+        .roleplay-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #4a5568;
+        }
+        
+        .roleplay-section {
+            margin-bottom: 12px;
+        }
+        
+        .roleplay-section h3 {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #1a202c;
+        }
+        
+        .roleplay-section p {
+            line-height: 1.4;
+            color: #4a5568;
+            font-size: 13px;
+        }
+        
+        .roleplay-section ol {
+            margin: 0;
+            padding-left: 18px;
+            line-height: 1.4;
+            color: #4a5568;
+            font-size: 13px;
+        }
+        
+        .roleplay-section ol li {
+            margin-bottom: 2px;
+        }
+        
+        .roleplay-participants {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+        }
+        
+        .participant-card {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .participant-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        
+        .participant-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        
+        .participant-sparkle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #0a66c2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .participant-info h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #1a202c;
+            margin-bottom: 2px;
+        }
+        
+        .participant-info span {
+            font-size: 13px;
+            color: #6b7280;
+        }
+        
+        .roleplay-disclaimer {
+            background: #f9fafb;
+            padding: 10px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: auto;
+            margin-bottom: 12px;
+        }
+        
+        .roleplay-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+        
+        .roleplay-btn {
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: none;
+        }
+        
+        .roleplay-btn.secondary {
+            background: white;
+            color: #4a5568;
+            border: 2px solid #e5e7eb;
+        }
+        
+        .roleplay-btn.secondary:hover {
+            background: #f9fafb;
+        }
+        
+        .roleplay-btn.primary {
+            background: #0a66c2;
+            color: white;
+        }
+        
+        .roleplay-btn.primary:hover {
+            background: #084c94;
+        }
+        
+        /* Lesson-like content */
+        .lesson-content {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 16px;
+        }
+        
+        .lesson-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .lesson-icon {
+            width: 40px;
+            height: 40px;
+            background: #0a66c2;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+        }
+        
+        .lesson-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: #1a202c;
+        }
+        
+        .lesson-objectives {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .lesson-objectives h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0a66c2;
+            margin-bottom: 12px;
+        }
+        
+        .lesson-objectives ul {
+            list-style: none;
+            padding: 0;
+        }
+        
+        .lesson-objectives li {
+            padding-left: 24px;
+            position: relative;
+            margin-bottom: 8px;
+            color: #4a5568;
+        }
+        
+        .lesson-objectives li:before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: #10b981;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                </svg>
+            </div>
+            <div class="sidebar-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                </svg>
+            </div>
+            <div class="sidebar-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                </svg>
+            </div>
+            <div class="sidebar-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+                </svg>
+            </div>
+            <div class="sidebar-icon">
+                <svg viewBox="0 0 24 24">
+                    <path d="M17 3H5c-1.11 0-2 .9-2 2v14c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V7l-4-4zm-5 16c-1.66 0-3-1.34-3-3s1.34-3 3-3 3 1.34 3 3-1.34 3-3 3zm3-10H5V5h10v4z"/>
+                </svg>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Chat Panel -->
+            <div class="chat-panel">
+                <div class="chat-header">
+                    <div class="linkedin-logo">
+                        <svg width="34" height="34" viewBox="0 0 34 34" fill="none">
+                            <rect width="34" height="34" rx="4" fill="#0A66C2"/>
+                            <path d="M8 25h4V13H8v12zm2-14c1.3 0 2.3-1 2.3-2.3C12.3 7.4 11.3 6.4 10 6.4S7.7 7.4 7.7 8.7C7.7 10 8.7 11 10 11zm6 14h4v-6.5c0-3.5 4.5-3.8 4.5 0V25h4v-7.8c0-5.9-6.7-5.7-8.5-2.8V13H16v12z" fill="white"/>
+                        </svg>
+                        <span>Learning</span>
+                    </div>
+                </div>
+                
+                <div class="chat-messages" id="chatMessages">
+                    <!-- Messages will appear here -->
+                </div>
+                
+                <div class="chat-input-container">
+                    <div class="smart-replies" id="smartReplies"></div>
+                    <div class="chat-input-wrapper">
+                        <input type="text" class="chat-input" id="chatInput" placeholder="Ask me anything..." />
+                        <button class="send-button" id="sendButton" onclick="handleSend()">
+                            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+                                <path d="M2 10L18 2L14 18L10 10L2 10Z" fill="white"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Exercise Panel -->
+            <div class="exercise-panel" id="exercisePanel" style="display: none;">
+                <div class="exercise-header">
+                    <div class="exercise-title" id="exerciseTitle">
+                        <i class="fas fa-users"></i>
+                        <span>Role play</span>
+                    </div>
+                </div>
+                <div class="exercise-content" id="exerciseContent">
+                    <!-- Exercise content will be inserted here -->
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Video Modal -->
+    <div class="video-modal" id="videoModal">
+        <div class="video-container">
+            <button class="video-close" onclick="closeVideo()">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="video-player">
+                <img class="video-thumbnail" id="videoThumbnail" src="" alt="">
+                <div class="play-button">
+                    <i class="fas fa-play"></i>
+                </div>
+            </div>
+            <div class="video-info">
+                <div class="video-title" id="videoTitle"></div>
+                <div style="color: #666; font-size: 14px;">Click play to start watching this course</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Conversation data from JSON
+        const conversationData = {
+            courses: [
+                {
+                    course_id: "C001",
+                    title: "Public Speaking Foundations",
+                    thumbnail: "course_thumbnail_1.png",
+                    duration: "1h 1m"
+                },
+                {
+                    course_id: "C002",
+                    title: "Speaking Confidently and Effectively",
+                    thumbnail: "course_thumbnail_2.png",
+                    duration: "22m"
+                },
+                {
+                    course_id: "C003",
+                    title: "Advanced Presentation Skills",
+                    thumbnail: "course_thumbnail_3.png",
+                    duration: "34m"
+                },
+                {
+                    course_id: "C004",
+                    title: "Public Speaking Skills Professional Certificate",
+                    thumbnail: "course_thumbnail_1.png",
+                    duration: "5h 12m"
+                },
+                {
+                    course_id: "C005",
+                    title: "Storytelling for Influence",
+                    thumbnail: "course_thumbnail_2.png",
+                    duration: "1h 8m"
+                }
+            ],
+            conversations: [
+                {
+                    query: "How do I become a confident public speaker?",
+                    lessonTitle: "Foundations of Confident Public Speaking",
+                    response: {
+                        objectives: [
+                            "Master techniques to manage speaking anxiety and nervousness",
+                            "Develop a structured approach to speech preparation",
+                            "Learn body language and vocal techniques for engagement",
+                            "Practice opening strategies that capture attention"
+                        ],
+                        content: `
+**Welcome to your Public Speaking Journey!**
+
+Public speaking is one of the most valuable skills you can develop as a professional. Whether you're presenting to your team, speaking at a conference, or pitching to investors, the ability to communicate confidently can transform your career.
+
+**Understanding Speaking Anxiety**
+
+First, let's address the elephant in the room: nervousness. Did you know that 75% of people experience speaking anxiety? You're not alone! The key is not to eliminate nervousness but to channel it productively.
+
+**The Three Pillars of Confident Speaking:**
+
+**1. Mental Preparation**
+- Practice deep breathing exercises (4-7-8 technique)
+- Visualize successful outcomes
+- Reframe anxiety as excitement - both create the same physiological response!
+
+**2. Content Mastery**
+- Know your material inside and out
+- Practice your speech at least 5 times out loud
+- Prepare for potential questions
+- Create a clear structure: Hook → Preview → Body → Conclusion
+
+**3. Physical Presence**
+- Stand with feet shoulder-width apart
+- Make eye contact with different sections of your audience
+- Use purposeful gestures that reinforce your message
+- Vary your vocal pace and tone
+
+**Your First Assignment:**
+Record yourself giving a 1-minute introduction. We'll work on it together in the role-play exercise.`
+                    },
+                    segments: ["S001", "S004", "S002", "S003", "S005", "S006"],
+                    courses: ["C001", "C002"],
+                    practice: {
+                        type: "roleplay",
+                        scenario: "Professional conference introduction"
+                    },
+                    nextQuestions: [
+                        "What's the best way to start a speech to grab attention?",
+                        "How do I structure a talk so people remember it?"
+                    ]
+                },
+                {
+                    query: "What's the best way to start a speech to grab attention?",
+                    response: "**The first 30 seconds are critical.**\n\nStart with:\n• A **compelling story** that relates to your topic\n• A **surprising statistic** that challenges assumptions\n• A **thought-provoking question** that makes them think\n\nThis immediately hooks your audience and sets the tone for engagement.",
+                    segments: ["S006"],
+                    courses: ["C001", "C002", "C003", "C004", "C005"],
+                    nextQuestions: [
+                        "How do I structure a talk so people remember it?",
+                        "How should I handle tough questions during Q&A?"
+                    ]
+                },
+                {
+                    query: "How do I structure a talk so people remember it?",
+                    response: "**Structure your talk with a clear framework:**\n\n• **Beginning**: State your purpose and preview main points\n• **Middle**: Develop each point with examples and evidence\n• **End**: Summarize key takeaways and call to action\n\n*Use transitions between each main point to help the audience follow and retain your message.*",
+                    segments: ["S002"],
+                    courses: ["C001"],
+                    nextQuestions: [
+                        "How should I handle tough questions during Q&A?",
+                        "How do I deliver a TED-style presentation?"
+                    ]
+                },
+                {
+                    query: "How should I handle tough questions during Q&A?",
+                    response: "**Stay calm and use this framework:**\n\n1. **Listen fully** without interrupting\n2. **Repeat the question** to ensure clarity\n3. **Answer concisely** and stay on topic\n4. **Be honest** — if you don't know, offer to follow up\n\n*Remember: It's okay to pause and think before responding.*",
+                    segments: ["S008"],
+                    courses: ["C003"],
+                    nextQuestions: [
+                        "How do I deliver a TED-style presentation?"
+                    ]
+                },
+                {
+                    query: "How do I deliver a TED-style presentation?",
+                    lessonTitle: "Mastering the TED Talk Format",
+                    response: {
+                        objectives: [
+                            "Understand the core principles of TED-style presentations",
+                            "Learn how to craft a compelling narrative around one big idea",
+                            "Master the art of personal storytelling in presentations",
+                            "Develop techniques for memorable openings and closings"
+                        ],
+                        content: `
+**The TED Talk Revolution**
+
+TED talks have transformed how we think about presentations. In just 18 minutes or less, speakers share ideas that can change perspectives, inspire action, and spark innovation. But what makes these talks so powerful?
+
+**The One Big Idea Principle**
+
+Unlike traditional presentations that cover multiple topics, a TED talk revolves around ONE big idea. This isn't just any idea—it's something that:
+- Challenges conventional thinking
+- Offers a fresh perspective
+- Can be explained simply but has profound implications
+- Connects with universal human experiences
+
+**The Anatomy of a TED Talk**
+
+**1. The Hook (0-60 seconds)**
+Start with something that makes your audience lean in:
+- A counterintuitive statement: "Everything you know about X is wrong"
+- A compelling story that illustrates your main point
+- A shocking statistic that challenges assumptions
+- A thought experiment: "Imagine if..."
+
+**2. The Journey (The Middle)**
+- Use the "what is, what could be" structure
+- Weave in 2-3 personal stories that support your idea
+- Include moments of humor or surprise
+- Use simple, powerful visuals (not bullet points!)
+- Create "aha moments" where concepts click
+
+**3. The Transformation (The Close)**
+- Circle back to your opening
+- Paint a picture of the future with your idea implemented
+- Give a clear call to action
+- End with a memorable phrase or image
+
+**The Personal Connection**
+
+TED talks work because they're human. Share:
+- Your failures and what you learned
+- Moments of discovery or realization
+- Why this idea matters to YOU personally
+- Vulnerable moments that build trust
+
+**Visual Storytelling Tips:**
+- Use full-screen images, not slides with text
+- Show, don't tell
+- One idea per slide
+- Let visuals enhance, not repeat your words
+
+**Your TED Talk Assignment:**
+Choose one idea you're passionate about. We'll practice crafting your opening hook in the next exercise.`
+                    },
+                    segments: ["S007", "S006", "S009"],
+                    courses: ["C003", "C002"],
+                    practice: {
+                        type: "multiple_choice",
+                        question: "Which of these is NOT a hallmark of a TED-style presentation?",
+                        options: [
+                            "Focusing on one big idea",
+                            "Using personal stories",
+                            "Including dense technical jargon",
+                            "Closing with a memorable takeaway"
+                        ],
+                        correct: 2
+                    }
+                }
+            ]
+        };
+        
+        let currentConversationIndex = -1;
+        let chatContainer = document.getElementById('chatMessages');
+        let exercisePanel = document.getElementById('exercisePanel');
+        let exerciseContent = document.getElementById('exerciseContent');
+        let smartRepliesContainer = document.getElementById('smartReplies');
+        let roleplayMessages = [];
+        
+        // Start with first question automatically
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                sendMessage('How do I become a confident public speaker?');
+            }, 500);
+        });
+        
+        function sendMessage(text) {
+            // Clear welcome prompt if it exists
+            const welcomePrompt = chatContainer.querySelector('.welcome-prompt');
+            if (welcomePrompt) {
+                welcomePrompt.remove();
+            }
+            
+            // Add main question header for first question
+            if (currentConversationIndex === -1) {
+                const headerDiv = document.createElement('div');
+                headerDiv.className = 'main-question';
+                headerDiv.textContent = text;
+                chatContainer.appendChild(headerDiv);
+            } else {
+                // Add user message
+                addMessage(text, 'user');
+            }
+            
+            // Find matching conversation
+            const conversation = conversationData.conversations.find(c => 
+                c.query.toLowerCase() === text.toLowerCase()
+            );
+            
+            if (conversation) {
+                currentConversationIndex = conversationData.conversations.indexOf(conversation);
+                
+                // Show typing indicator
+                showTypingIndicator();
+                
+                // Simulate AI thinking
+                setTimeout(() => {
+                    hideTypingIndicator();
+                    
+                    // Add AI response
+                    addAIMessage(conversation.response, conversation.courses);
+                    
+                    // Show practice exercise if available, otherwise show search results
+                    if (conversation.practice) {
+                        showExercise(conversation.practice);
+                    } else if (conversation.courses && conversation.courses.length > 0) {
+                        // For narrow queries, show search results in right panel
+                        showExercise(null);
+                    } else {
+                        exercisePanel.style.display = 'none';
+                    }
+                    
+                    // Show smart replies
+                    if (conversation.nextQuestions && conversation.nextQuestions.length > 0) {
+                        showSmartReplies(conversation.nextQuestions);
+                    }
+                }, 1500);
+            }
+            
+            // Clear input
+            document.getElementById('chatInput').value = '';
+        }
+        
+        function addMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${type}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.textContent = text;
+            
+            messageDiv.appendChild(contentDiv);
+            chatContainer.appendChild(messageDiv);
+            
+            // Remove auto-scroll - let user control scrolling
+        }
+        
+        function parseMarkdown(text) {
+            // Convert markdown to HTML
+            return text
+                .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                .replace(/^• (.+)$/gm, '<li>$1</li>')
+                .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+                .replace(/(<li>.*<\/li>\n?)+/g, '<ul>$&</ul>')
+                .replace(/\n\n/g, '<br><br>')
+                .replace(/\n/g, '<br>');
+        }
+        
+        function addAIMessage(response, courseIds) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ai';
+            
+            // Check if it's a lesson format or simple response
+            if (typeof response === 'object' && response.objectives) {
+                // For broad queries - show course references at TOP
+                if (courseIds && courseIds.length > 0) {
+                    const coursesDiv = document.createElement('div');
+                    coursesDiv.className = 'course-references';
+                    coursesDiv.style.marginBottom = '20px';
+                    
+                    courseIds.forEach(courseId => {
+                        const course = conversationData.courses.find(c => c.course_id === courseId);
+                        if (course) {
+                            const courseRef = document.createElement('div');
+                            courseRef.className = 'course-ref';
+                            courseRef.onclick = () => openVideo(course);
+                            courseRef.innerHTML = `
+                                <img src="${course.thumbnail}" alt="${course.title}" />
+                                <div class="course-ref-title">${course.title}</div>
+                            `;
+                            coursesDiv.appendChild(courseRef);
+                        }
+                    });
+                    
+                    messageDiv.appendChild(coursesDiv);
+                }
+                
+                // Create lesson-like content
+                const lessonDiv = document.createElement('div');
+                lessonDiv.className = 'lesson-content';
+                
+                // Add objectives
+                const objectivesDiv = document.createElement('div');
+                objectivesDiv.className = 'lesson-objectives';
+                objectivesDiv.innerHTML = `
+                    <h4>Learning Objectives</h4>
+                    <ul>
+                        ${response.objectives.map(obj => `<li>${obj}</li>`).join('')}
+                    </ul>
+                `;
+                lessonDiv.appendChild(objectivesDiv);
+                
+                // Add content
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.innerHTML = parseMarkdown(response.content);
+                lessonDiv.appendChild(contentDiv);
+                
+                messageDiv.appendChild(lessonDiv);
+            } else {
+                // Simple response format (narrow queries)
+                const labelDiv = document.createElement('div');
+                labelDiv.className = 'ai-label';
+                labelDiv.innerHTML = `
+                    <i class="fas fa-sparkles"></i>
+                    Learning Tutor
+                `;
+                messageDiv.appendChild(labelDiv);
+                
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+                contentDiv.innerHTML = parseMarkdown(response);
+                messageDiv.appendChild(contentDiv);
+                
+                // For narrow queries - show only 1 course reference at BOTTOM
+                if (courseIds && courseIds.length > 0) {
+                    const coursesDiv = document.createElement('div');
+                    coursesDiv.className = 'course-references';
+                    coursesDiv.style.marginTop = '16px';
+                    
+                    // Only show the first course
+                    const firstCourseId = courseIds[0];
+                    const course = conversationData.courses.find(c => c.course_id === firstCourseId);
+                    if (course) {
+                        const courseRef = document.createElement('div');
+                        courseRef.className = 'course-ref';
+                        courseRef.onclick = () => openVideo(course);
+                        courseRef.innerHTML = `
+                            <img src="${course.thumbnail}" alt="${course.title}" />
+                            <div class="course-ref-title">${course.title}</div>
+                        `;
+                        coursesDiv.appendChild(courseRef);
+                    }
+                    
+                    messageDiv.appendChild(coursesDiv);
+                }
+            }
+            
+            chatContainer.appendChild(messageDiv);
+            // Remove auto-scroll - let user control scrolling
+            // chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function showTypingIndicator() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message ai';
+            typingDiv.id = 'typingIndicator';
+            
+            const indicator = document.createElement('div');
+            indicator.className = 'typing-indicator active';
+            indicator.innerHTML = `
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            `;
+            
+            typingDiv.appendChild(indicator);
+            chatContainer.appendChild(typingDiv);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+        
+        function hideTypingIndicator() {
+            const indicator = document.getElementById('typingIndicator');
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+        
+        function showExercise(practice) {
+            exercisePanel.style.display = 'flex';
+            exerciseContent.innerHTML = '';
+            const titleElement = document.getElementById('exerciseTitle');
+            
+            // Show search results for narrow queries without practice
+            if (!practice) {
+                exercisePanel.classList.add('search-mode');
+                titleElement.innerHTML = '<i class="fas fa-search"></i><span>Search Results</span>';
+                showSearchResultsPanel();
+                return;
+            }
+            
+            // Remove search mode for other exercises
+            exercisePanel.classList.remove('search-mode');
+            
+            // Always show role play for first question
+            if (currentConversationIndex === 0 || practice.type === 'roleplay') {
+                titleElement.innerHTML = '<i class="fas fa-users"></i><span>Role play</span>';
+                
+                exerciseContent.innerHTML = `
+                    <div class="roleplay-intro">
+                        <h2 class="roleplay-title">Mastering Public Speaking</h2>
+                        
+                        <div class="roleplay-user-info">
+                            <div class="roleplay-avatar" style="background: #4a5568; color: white; font-size: 14px;">MA</div>
+                            <span>Mohammed Ali</span>
+                        </div>
+                        
+                        <div class="roleplay-section">
+                            <h3>What this conversation is about</h3>
+                            <p>You are preparing to deliver a speech at a professional conference. You will practice your speech in front of a seasoned public speaking coach who will provide feedback and guidance.</p>
+                        </div>
+                        
+                        <div class="roleplay-section">
+                            <h3>What makes it successful</h3>
+                            <ol>
+                                <li>Deliver a clear and engaging introduction that captures the audience's attention.</li>
+                                <li>Maintain a confident and composed demeanor throughout the speech.</li>
+                                <li>Use appropriate body language and gestures to enhance your message.</li>
+                                <li>Effectively manage your pacing and avoid filler words.</li>
+                                <li>Conclude with a strong and memorable closing statement.</li>
+                            </ol>
+                        </div>
+                        
+                        <div class="roleplay-section">
+                            <h3>Who the conversation is between</h3>
+                            <div class="roleplay-participants">
+                                <div class="participant-card">
+                                    <div class="participant-avatar" style="background: #4a5568; color: white; display: flex; align-items: center; justify-content: center; font-size: 14px;">
+                                        MA
+                                    </div>
+                                    <div class="participant-info">
+                                        <h4>Mohammed Ali</h4>
+                                        <span style="color: #1a202c;">Me</span>
+                                        <span style="display: block; font-size: 12px; color: #6b7280;">Speaker</span>
+                                    </div>
+                                </div>
+                                <div class="participant-card">
+                                    <div class="participant-sparkle">
+                                        <i class="fas fa-sparkles"></i>
+                                    </div>
+                                    <div class="participant-info">
+                                        <h4>LinkedIn AI</h4>
+                                        <span>Public Speaking Coach</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <p style="margin-top: 12px; color: #4a5568; font-size: 13px;">The AI is an experienced and encouraging public speaking coach who provides constructive feedback and practical tips to help improve your delivery and confidence.</p>
+                        </div>
+                        
+                        <div class="roleplay-disclaimer">
+                            This is powered by AI and may make mistakes. <a href="#" style="color: #0a66c2; text-decoration: none;">Learn more</a>
+                        </div>
+                        
+                        <div class="roleplay-actions">
+                            <button class="roleplay-btn secondary">Edit</button>
+                            <button class="roleplay-btn secondary">Share</button>
+                            <button class="roleplay-btn primary" onclick="startRoleplay()">Start</button>
+                        </div>
+                        
+                        <div style="text-align: center; margin-top: 12px; font-size: 11px; color: #9ca3af;">
+                            Your Learning data is managed by your organization. <a href="#" style="color: #0a66c2; text-decoration: none;">Learn more</a>
+                        </div>
+                    </div>
+                `;
+                
+            } else if (practice.type === 'multiple_choice') {
+                titleElement.innerHTML = '<i class="fas fa-check-circle"></i><span>Quick Check</span>';
+                
+                let optionsHtml = practice.options.map((option, index) => `
+                    <div class="mc-option" onclick="selectOption(${index}, ${practice.correct})">
+                        ${option}
+                    </div>
+                `).join('');
+                
+                exerciseContent.innerHTML = `
+                    <div class="exercise-prompt">
+                        <h3>Quick Check</h3>
+                        <p>${practice.question}</p>
+                    </div>
+                    <div class="mc-options">
+                        ${optionsHtml}
+                    </div>
+                    <div class="feedback" id="feedback"></div>
+                `;
+            }
+        }
+        
+        function submitExercise() {
+            const input = document.getElementById('exerciseInput');
+            const feedback = document.getElementById('feedback');
+            
+            if (input.value.trim().length > 10) {
+                feedback.className = 'feedback show success';
+                feedback.innerHTML = 'Great job! Your summary captures the key elements of becoming a confident speaker.';
+            } else {
+                feedback.className = 'feedback show error';
+                feedback.innerHTML = 'Try to include more detail in your summary.';
+            }
+        }
+        
+        function selectOption(index, correctIndex) {
+            const options = document.querySelectorAll('.mc-option');
+            const feedback = document.getElementById('feedback');
+            
+            options.forEach((opt, i) => {
+                opt.classList.remove('selected', 'correct', 'incorrect');
+                if (i === index) {
+                    opt.classList.add('selected');
+                    if (i === correctIndex) {
+                        opt.classList.add('correct');
+                        feedback.className = 'feedback show success';
+                        feedback.innerHTML = 'Correct! TED talks avoid technical jargon to keep the message accessible.';
+                    } else {
+                        opt.classList.add('incorrect');
+                        options[correctIndex].classList.add('correct');
+                        feedback.className = 'feedback show error';
+                        feedback.innerHTML = 'Not quite. TED talks focus on clarity and avoid dense technical language.';
+                    }
+                }
+            });
+        }
+        
+        function showSmartReplies(questions) {
+            smartRepliesContainer.innerHTML = '';
+            questions.forEach(question => {
+                const reply = document.createElement('div');
+                reply.className = 'smart-reply';
+                reply.textContent = question;
+                reply.onclick = () => {
+                    sendMessage(question);
+                    smartRepliesContainer.innerHTML = '';
+                };
+                smartRepliesContainer.appendChild(reply);
+            });
+        }
+        
+        function handleSend() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (text) {
+                sendMessage(text);
+            }
+        }
+        
+        // Handle enter key
+        document.getElementById('chatInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                handleSend();
+            }
+        });
+        
+        // Video Modal Functions
+        function openVideo(course) {
+            const modal = document.getElementById('videoModal');
+            const thumbnail = document.getElementById('videoThumbnail');
+            const title = document.getElementById('videoTitle');
+            
+            thumbnail.src = course.thumbnail;
+            title.textContent = course.title;
+            modal.classList.add('active');
+        }
+        
+        function closeVideo() {
+            const modal = document.getElementById('videoModal');
+            modal.classList.remove('active');
+        }
+        
+        // Search Results Function for narrow queries
+        function showSearchResultsPanel() {
+            const currentConv = conversationData.conversations[currentConversationIndex];
+            const courses = currentConv.courses || [];
+            
+            // Sample course data with more details
+            const courseDetails = {
+                "C001": {
+                    title: "Public Speaking Foundations",
+                    duration: "1h 1m",
+                    level: "Beginner",
+                    updated: "May 2023",
+                    instructor: "Laura Bergells",
+                    provider: "LinkedIn",
+                    rating: 4.7,
+                    reviews: 8104,
+                    learners: "528,834 learners",
+                    type: "Course",
+                    popular: true,
+                    certificate: true
+                },
+                "C002": {
+                    title: "Speaking Confidently and Effectively",
+                    duration: "22m",
+                    level: "Beginner",
+                    updated: "Nov 2020",
+                    instructor: "Pete Mockaitis",
+                    provider: "LinkedIn",
+                    rating: 4.6,
+                    reviews: 338,
+                    learners: "13,195 learners",
+                    type: "Course",
+                    popular: true
+                },
+                "C003": {
+                    title: "How to Be a Better Professional Speaker in the Workplace",
+                    duration: "34m",
+                    level: "Beginner",
+                    updated: "Feb 2025",
+                    instructor: "Goldie Chan",
+                    provider: "LinkedIn",
+                    rating: 4.6,
+                    reviews: 338,
+                    learners: "13,195 learners",
+                    type: "Course",
+                    popular: true,
+                    coworkerLikes: 1
+                },
+                "C004": {
+                    title: "Public Speaking Skills Professional Certificate",
+                    duration: "5h 12m",
+                    level: "Professional Certificate",
+                    updated: "Dec 2024",
+                    instructor: "LinkedIn and Toastmasters International",
+                    provider: "Provided by",
+                    rating: 4.8,
+                    reviews: 20111,
+                    learners: "20,111 learners",
+                    type: "Professional Certificate",
+                    certificate: true
+                },
+                "C005": {
+                    title: "Storytelling for Influence",
+                    duration: "1h 8m",
+                    level: "Intermediate",
+                    updated: "Mar 2024",
+                    instructor: "Shane Snow",
+                    provider: "LinkedIn",
+                    rating: 4.5,
+                    reviews: 2341,
+                    learners: "45,234 learners",
+                    type: "Course"
+                }
+            };
+            
+            exerciseContent.innerHTML = `
+                <div class="search-results-container">
+                    <div class="search-results-header">
+                        <div class="search-results-count">1,874 Results for "public speaking"</div>
+                        <div class="search-results-sort">
+                            Best Match <i class="fas fa-chevron-down"></i>
+                        </div>
+                    </div>
+                    
+                    ${courses.map(courseId => {
+                        const course = conversationData.courses.find(c => c.course_id === courseId);
+                        const details = courseDetails[courseId];
+                        if (!course || !details) return '';
+                        
+                        return `
+                            <div class="search-result-card">
+                                <img src="${course.thumbnail}" alt="${details.title}" class="search-result-thumb" onclick="openVideo(${JSON.stringify(course).replace(/"/g, '&quot;')})">
+                                <div class="search-result-content">
+                                    <div class="search-result-type ${details.popular ? 'popular' : ''}">${details.type} ${details.popular ? 'Popular' : ''}</div>
+                                    <h3 class="search-result-title">${details.title}</h3>
+                                    <div class="search-result-meta">
+                                        <span>${details.duration}</span>
+                                        <span>•</span>
+                                        <span>${details.level}</span>
+                                        <span>•</span>
+                                        <span>Updated ${details.updated}</span>
+                                    </div>
+                                    <div class="search-result-provider">
+                                        <div class="linkedin-icon">in</div>
+                                        <span>${details.provider}</span>
+                                        <span>•</span>
+                                        <span>By: ${details.instructor}</span>
+                                    </div>
+                                    <div class="search-result-stats">
+                                        <div class="search-result-rating">
+                                            <span>${details.rating}</span>
+                                            <span class="stars">★★★★★</span>
+                                            <span>(${details.reviews.toLocaleString()})</span>
+                                        </div>
+                                        <span>•</span>
+                                        <span>${details.learners}</span>
+                                        ${details.certificate ? '<span>• <i class="fas fa-certificate"></i> Certificate Eligible</span>' : ''}
+                                        ${details.coworkerLikes ? `<span>• ${details.coworkerLikes} coworker likes this</span>` : ''}
+                                    </div>
+                                    <div class="search-result-actions">
+                                        <div class="search-result-cta">
+                                            <i class="fas fa-plus"></i>
+                                            <span>Summarize key learnings</span>
+                                        </div>
+                                        <div style="display: flex; gap: 12px; align-items: center;">
+                                            <button class="save-button">Save</button>
+                                            <button class="more-button">
+                                                <i class="fas fa-ellipsis-h"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    }).join('')}
+                </div>
+            `;
+        }
+        
+        // Close video modal on background click
+        document.getElementById('videoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'videoModal') {
+                closeVideo();
+            }
+        });
+        
+        // Role Play Functions
+        function startRoleplay() {
+            const exerciseContent = document.getElementById('exerciseContent');
+            
+            roleplayMessages = [
+                {
+                    type: 'ai',
+                    text: "Welcome! I'm your public speaking coach. Let's practice your conference presentation. Start by introducing yourself and your topic in 30 seconds. Remember to speak clearly and confidently. When you're ready, go ahead!"
+                }
+            ];
+            
+            exerciseContent.innerHTML = `
+                <div style="height: 100%; display: flex; flex-direction: column;">
+                    <div style="flex: 1; overflow-y: auto; background: #1a202c; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+                        <div id="roleplayMessages">
+                            ${roleplayMessages.map(msg => `
+                                <div style="margin-bottom: 16px; text-align: ${msg.type === 'user' ? 'right' : 'left'};">
+                                    <div style="display: inline-block; max-width: 85%; padding: 12px 16px; border-radius: 12px; background: ${msg.type === 'user' ? '#3182ce' : '#4a5568'}; color: white;">
+                                        ${msg.text}
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="roleplayInput" style="flex: 1; background: #1a202c; border: 1px solid #4a5568; border-radius: 8px; padding: 12px; color: white; font-size: 14px;" placeholder="Type your response..." />
+                        <button onclick="sendRoleplayMessage()" style="background: #3182ce; color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer;">Send</button>
+                    </div>
+                </div>
+            `;
+            
+            // Focus on input
+            setTimeout(() => {
+                document.getElementById('roleplayInput').focus();
+            }, 100);
+        }
+        
+        function sendRoleplayMessage() {
+            const input = document.getElementById('roleplayInput');
+            const messagesContainer = document.getElementById('roleplayMessages');
+            const text = input.value.trim();
+            
+            if (!text) return;
+            
+            // Add user message
+            roleplayMessages.push({ type: 'user', text });
+            
+            // Clear input
+            input.value = '';
+            
+            // Update display
+            updateRoleplayDisplay();
+            
+            // Simulate AI response
+            setTimeout(() => {
+                const aiResponse = getAIRoleplayResponse(roleplayMessages.length);
+                roleplayMessages.push({ type: 'ai', text: aiResponse });
+                updateRoleplayDisplay();
+            }, 1000);
+        }
+        
+        function updateRoleplayDisplay() {
+            const messagesContainer = document.getElementById('roleplayMessages');
+            messagesContainer.innerHTML = roleplayMessages.map(msg => `
+                <div style="margin-bottom: 16px; text-align: ${msg.type === 'user' ? 'right' : 'left'};">
+                    <div style="display: inline-block; max-width: 85%; padding: 12px 16px; border-radius: 12px; background: ${msg.type === 'user' ? '#3182ce' : '#4a5568'}; color: white;">
+                        ${msg.text}
+                    </div>
+                </div>
+            `).join('');
+            
+            // Scroll to bottom
+            messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
+        }
+        
+        function getAIRoleplayResponse(messageCount) {
+            const responses = [
+                "That was a good start! I noticed you spoke quite quickly. Try again, but this time pause between your main points. What's one key achievement you'd like to highlight?",
+                "Much better! Your pacing improved significantly. Now, let's work on your closing. How would you end your introduction to leave a lasting impression?",
+                "Excellent progress! You're speaking more confidently and your pauses are well-timed. Let's practice one more time - this time, add a bit more energy and enthusiasm to your voice.",
+                "Fantastic! You've really improved. Your introduction was clear, well-paced, and engaging. Remember these techniques when you're speaking in real situations. Would you like to practice another scenario?"
+            ];
+            
+            return responses[Math.min(messageCount / 2 - 1, responses.length - 1)] || responses[responses.length - 1];
+        }
+        
+        // Handle enter key for roleplay
+        document.addEventListener('keypress', (e) => {
+            if (e.target.id === 'roleplayInput' && e.key === 'Enter') {
+                sendRoleplayMessage();
+            }
+        });
+    </script>
+</body>
+</html>
